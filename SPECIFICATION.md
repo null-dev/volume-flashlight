@@ -1,1 +1,2 @@
 volume-flashlight uses Shizuku to listen to hardware button evdev events on an Android device. Specifically, it detects when volume-down is long-pressed. When this happens, it toggles the flashlight.
+The app should be as light on resources & battery as possible.
