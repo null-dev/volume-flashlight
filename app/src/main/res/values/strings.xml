@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">volume-flashlight</string>
+    <string name="notification_text">Listening for volume-down long press</string>
+    <string name="shizuku_not_running">Shizuku is not running</string>
+    <string name="shizuku_no_permission">Shizuku permission required — tap Start to grant</string>
+    <string name="shizuku_ready">Shizuku ready</string>
+    <string name="service_active">Flashlight toggle: Active</string>
+    <string name="service_inactive">Flashlight toggle: Inactive</string>
+    <string name="btn_start">Start</string>
+    <string name="btn_stop">Stop</string>
+</resources>
