@@ -1,6 +1,7 @@
 package com.nulldev.volumeflashlight.shizuku
 
 import android.os.Process
+import android.util.Log
 import com.nulldev.volumeflashlight.IInputEventCallback
 import com.nulldev.volumeflashlight.IInputEventService
 import java.io.File
@@ -121,7 +122,9 @@ class InputEventUserService : IInputEventService.Stub() {
                 val bitmap       = keyLine.substringAfter("B: KEY=").trim()
                 if (isKeyBitSet(bitmap, KEY_VOLUMEDOWN)) {
                     val m = Regex("event(\\d+)").find(handlersLine) ?: continue
-                    return "/dev/input/event${m.groupValues[1]}"
+                    val path = "/dev/input/event${m.groupValues[1]}"
+                    Log.i(TAG, "Found volume-down device: $path")
+                    return path
                 }
             }
             null
@@ -144,6 +147,7 @@ class InputEventUserService : IInputEventService.Stub() {
     }
 
     companion object {
+        private const val TAG            = "InputEventUserService"
         private const val EV_KEY        = 1
         private const val KEY_VOLUMEDOWN = 114
         private const val LONG_PRESS_MS  = 500L
