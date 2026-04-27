@@ -11,6 +11,7 @@
     <string name="btn_stop">Stop</string>
     <string name="btn_evdev_monitor">Evdev Monitor</string>
     <string name="btn_pick_device">Pick input device</string>
+    <string name="cb_auto_start">Start on boot</string>
     <string name="pick_device_title">Input device</string>
     <string name="pick_device_auto">Auto-detect</string>
 <string name="evdev_monitor_title">Evdev Monitor</string>

@@ -176,8 +176,9 @@ class FlashlightService : Service() {
     companion object {
         @Volatile var isRunning = false
 
-        const val PREFS_NAME       = "app_prefs"
+        const val PREFS_NAME        = "app_prefs"
         const val PREF_INPUT_DEVICE = "selected_input_device"
+        const val PREF_AUTO_START   = "auto_start"
 
         private const val CHANNEL_ID      = "flashlight_service"
         private const val NOTIFICATION_ID = 1

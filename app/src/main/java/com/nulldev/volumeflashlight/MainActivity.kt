@@ -11,6 +11,7 @@ import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
 import android.widget.Button
+import android.widget.CheckBox
 import android.widget.TextView
 import android.widget.Toast
 import com.nulldev.volumeflashlight.shizuku.InputEventUserService
@@ -27,6 +28,7 @@ class MainActivity : Activity() {
     private lateinit var btnToggle: Button
     private lateinit var btnEvdevMonitor: Button
     private lateinit var btnPickDevice: Button
+    private lateinit var cbAutoStart: CheckBox
 
     private val handler = Handler(Looper.getMainLooper())
 
@@ -63,12 +65,19 @@ class MainActivity : Activity() {
         btnToggle       = findViewById(R.id.btn_toggle)
         btnEvdevMonitor = findViewById(R.id.btn_evdev_monitor)
         btnPickDevice   = findViewById(R.id.btn_pick_device)
+        cbAutoStart     = findViewById(R.id.cb_auto_start)
 
         btnToggle.setOnClickListener { onToggleClicked() }
         btnEvdevMonitor.setOnClickListener {
             startActivity(Intent(this, EvdevMonitorActivity::class.java))
         }
         btnPickDevice.setOnClickListener { showPickDeviceDialog() }
+        cbAutoStart.setOnClickListener {
+            getSharedPreferences(FlashlightService.PREFS_NAME, MODE_PRIVATE)
+                .edit()
+                .putBoolean(FlashlightService.PREF_AUTO_START, cbAutoStart.isChecked)
+                .apply()
+        }
         Shizuku.addRequestPermissionResultListener(permissionListener)
     }
 
@@ -105,6 +114,9 @@ class MainActivity : Activity() {
         btnToggle.isEnabled = shizukuRunning
         btnToggle.text = if (serviceRunning) getString(R.string.btn_stop)
                          else getString(R.string.btn_start)
+
+        val prefs = getSharedPreferences(FlashlightService.PREFS_NAME, MODE_PRIVATE)
+        cbAutoStart.isChecked = prefs.getBoolean(FlashlightService.PREF_AUTO_START, false)
     }
 
     private fun showPickDeviceDialog() {
