@@ -47,6 +47,8 @@ class FlashlightService : Service() {
             restoring = false
             restoreThread?.interrupt()
             restoreThread = null
+            val vol = savedVolume
+            if (vol >= 0) audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, vol, 0)
         }
 
         override fun onVolumeLongPress() {
