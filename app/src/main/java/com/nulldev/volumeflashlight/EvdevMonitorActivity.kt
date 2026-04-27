@@ -11,6 +11,7 @@ import android.widget.ScrollView
 import android.widget.TextView
 import com.nulldev.volumeflashlight.shizuku.InputEventUserService
 import rikka.shizuku.Shizuku
+import java.util.concurrent.ConcurrentLinkedDeque
 
 /**
  * Shows a live tail of raw evdev events from all /dev/input/event* devices.
@@ -35,18 +36,31 @@ class EvdevMonitorActivity : Activity() {
             .version(BuildConfig.VERSION_CODE)
     }
 
+    // Binder threads write here; main thread drains it on a fixed-rate tick.
+    private val pendingLines = ConcurrentLinkedDeque<String>()
     private val logLines = ArrayDeque<String>(MAX_LINES + 1)
 
     private val evdevCallback = object : IEvdevEventCallback.Stub() {
         override fun onEvent(devicePath: String, type: Int, code: Int, value: Int) {
             val devName = devicePath.substringAfterLast("/")
-            val line = "$devName  type=%-5d  code=%-5d  value=$value".format(type, code)
-            handler.post {
-                logLines.addLast(line)
+            pendingLines.addLast("$devName  type=%-5d  code=%-5d  value=$value".format(type, code))
+        }
+    }
+
+    // Drains pendingLines and redraws at most once per UI_INTERVAL_MS.
+    private val uiUpdateRunnable = object : Runnable {
+        override fun run() {
+            var changed = false
+            while (pendingLines.isNotEmpty()) {
+                logLines.addLast(pendingLines.pollFirst() ?: break)
                 if (logLines.size > MAX_LINES) logLines.removeFirst()
+                changed = true
+            }
+            if (changed) {
                 tvLog.text = logLines.joinToString("\n")
                 scrollView.post { scrollView.fullScroll(ScrollView.FOCUS_DOWN) }
             }
+            handler.postDelayed(this, UI_INTERVAL_MS)
         }
     }
 
@@ -73,6 +87,7 @@ class EvdevMonitorActivity : Activity() {
 
     override fun onResume() {
         super.onResume()
+        handler.post(uiUpdateRunnable)
         if (Shizuku.pingBinder()) {
             try {
                 Shizuku.bindUserService(userServiceArgs, serviceConnection)
@@ -87,6 +102,7 @@ class EvdevMonitorActivity : Activity() {
 
     override fun onPause() {
         super.onPause()
+        handler.removeCallbacks(uiUpdateRunnable)
         try { inputEventService?.stopMonitoring() } catch (_: Exception) {}
         inputEventService = null
         if (serviceBound) {
@@ -97,5 +113,6 @@ class EvdevMonitorActivity : Activity() {
 
     companion object {
         private const val MAX_LINES = 200
+        private const val UI_INTERVAL_MS = 25L
     }
 }
