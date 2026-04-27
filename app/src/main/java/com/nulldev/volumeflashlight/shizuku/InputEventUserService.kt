@@ -23,6 +23,7 @@ class InputEventUserService : IInputEventService.Stub() {
     @Volatile private var running = false
     @Volatile private var inputStream: FileInputStream? = null
     private var readerThread: Thread? = null
+    private var longPressTimer: Thread? = null
 
     @Volatile private var monitorRunning = false
     private val monitorStreams = mutableListOf<FileInputStream>()
@@ -119,7 +120,6 @@ class InputEventUserService : IInputEventService.Stub() {
         inputStream = fis
 
         val buffer = ByteArray(eventSize)
-        var pressTime = 0L
 
         try {
             while (running) {
@@ -139,15 +139,20 @@ class InputEventUserService : IInputEventService.Stub() {
 
                 if (type == EV_KEY && code == KEY_VOLUMEDOWN) {
                     when (value) {
-                        1 -> pressTime = System.currentTimeMillis() // key down
-                        0 -> { // key up
-                            val held = System.currentTimeMillis() - pressTime
-                            if (pressTime > 0 && held >= LONG_PRESS_MS) {
-                                try { callback?.onVolumeLongPress() } catch (_: Exception) {}
-                            }
-                            pressTime = 0
+                        1 -> { // key down — start a timer; fire after LONG_PRESS_MS if still held
+                            longPressTimer?.interrupt()
+                            longPressTimer = Thread {
+                                try {
+                                    Thread.sleep(LONG_PRESS_MS)
+                                    try { callback?.onVolumeLongPress() } catch (_: Exception) {}
+                                } catch (_: InterruptedException) {}
+                            }.also { it.isDaemon = true; it.start() }
                         }
-                        // value == 2 is key-repeat; ignore for long-press detection
+                        0 -> { // key up — cancel pending timer
+                            longPressTimer?.interrupt()
+                            longPressTimer = null
+                        }
+                        // value == 2 is key-repeat; ignore
                     }
                 }
             }

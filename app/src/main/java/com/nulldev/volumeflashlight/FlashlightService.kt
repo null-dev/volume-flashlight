@@ -12,6 +12,8 @@ import android.content.pm.ServiceInfo
 import android.os.Build
 import android.os.IBinder
 import android.os.RemoteException
+import android.os.VibrationEffect
+import android.os.Vibrator
 import com.nulldev.volumeflashlight.shizuku.InputEventUserService
 import rikka.shizuku.Shizuku
 
@@ -27,12 +29,14 @@ import rikka.shizuku.Shizuku
 class FlashlightService : Service() {
 
     private lateinit var flashlightManager: FlashlightManager
+    private val vibrator by lazy { getSystemService(Vibrator::class.java) }
 
     @Volatile private var inputEventService: IInputEventService? = null
 
     private val callback = object : IInputEventCallback.Stub() {
         override fun onVolumeLongPress() {
             flashlightManager.toggle()
+            vibrator.vibrate(VibrationEffect.createOneShot(50, VibrationEffect.DEFAULT_AMPLITUDE))
         }
     }
 
