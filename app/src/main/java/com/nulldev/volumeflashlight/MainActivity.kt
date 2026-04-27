@@ -19,6 +19,7 @@ class MainActivity : Activity() {
     private lateinit var tvShizukuStatus: TextView
     private lateinit var tvServiceStatus: TextView
     private lateinit var btnToggle: Button
+    private lateinit var btnEvdevMonitor: Button
 
     private val handler = Handler(Looper.getMainLooper())
 
@@ -33,8 +34,12 @@ class MainActivity : Activity() {
         tvShizukuStatus = findViewById(R.id.tv_shizuku_status)
         tvServiceStatus = findViewById(R.id.tv_service_status)
         btnToggle       = findViewById(R.id.btn_toggle)
+        btnEvdevMonitor = findViewById(R.id.btn_evdev_monitor)
 
         btnToggle.setOnClickListener { onToggleClicked() }
+        btnEvdevMonitor.setOnClickListener {
+            startActivity(Intent(this, EvdevMonitorActivity::class.java))
+        }
         Shizuku.addRequestPermissionResultListener(permissionListener)
     }
 

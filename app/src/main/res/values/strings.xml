@@ -9,4 +9,5 @@
     <string name="service_inactive">Flashlight toggle: Inactive</string>
     <string name="btn_start">Start</string>
     <string name="btn_stop">Stop</string>
+    <string name="btn_evdev_monitor">Evdev Monitor</string>
 </resources>

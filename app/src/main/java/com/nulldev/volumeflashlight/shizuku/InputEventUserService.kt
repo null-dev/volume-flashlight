@@ -2,6 +2,7 @@ package com.nulldev.volumeflashlight.shizuku
 
 import android.os.Process
 import android.util.Log
+import com.nulldev.volumeflashlight.IEvdevEventCallback
 import com.nulldev.volumeflashlight.IInputEventCallback
 import com.nulldev.volumeflashlight.IInputEventService
 import java.io.File
@@ -22,6 +23,10 @@ class InputEventUserService : IInputEventService.Stub() {
     @Volatile private var running = false
     @Volatile private var inputStream: FileInputStream? = null
     private var readerThread: Thread? = null
+
+    @Volatile private var monitorRunning = false
+    private val monitorStreams = mutableListOf<FileInputStream>()
+    private val monitorThreads = mutableListOf<Thread>()
 
     override fun startListening(callback: IInputEventCallback?) {
         // Replace any existing listener.
@@ -44,8 +49,35 @@ class InputEventUserService : IInputEventService.Stub() {
         readerThread = null
     }
 
+    override fun startMonitoring(callback: IEvdevEventCallback?) {
+        stopMonitoring()
+        monitorRunning = true
+        val devices = File("/dev/input").listFiles { f -> f.name.startsWith("event") } ?: return
+        synchronized(monitorStreams) {
+            for (device in devices) {
+                val fis = try { FileInputStream(device) } catch (_: IOException) { continue }
+                monitorStreams.add(fis)
+                val t = Thread({ runMonitorLoop(device.absolutePath, fis, callback) }, "evdev-mon-${device.name}")
+                t.isDaemon = true
+                t.start()
+                monitorThreads.add(t)
+            }
+        }
+    }
+
+    override fun stopMonitoring() {
+        monitorRunning = false
+        synchronized(monitorStreams) {
+            for (fis in monitorStreams) try { fis.close() } catch (_: IOException) {}
+            monitorStreams.clear()
+        }
+        for (t in monitorThreads) t.join(2_000)
+        monitorThreads.clear()
+    }
+
     override fun destroy() {
         stopListening()
+        stopMonitoring()
     }
 
     // ── evdev reader ──────────────────────────────────────────────────────────
@@ -103,6 +135,31 @@ class InputEventUserService : IInputEventService.Stub() {
         } finally {
             try { fis.close() } catch (_: IOException) {}
             inputStream = null
+        }
+    }
+
+    private fun runMonitorLoop(devicePath: String, fis: FileInputStream, callback: IEvdevEventCallback?) {
+        val is64bit = Process.is64Bit()
+        val timevalSize = if (is64bit) 16 else 8
+        val eventSize = timevalSize + 8
+        val buffer = ByteArray(eventSize)
+        try {
+            while (monitorRunning) {
+                var offset = 0
+                while (offset < eventSize) {
+                    val n = fis.read(buffer, offset, eventSize - offset)
+                    if (n < 0) return
+                    offset += n
+                }
+                val bb = ByteBuffer.wrap(buffer).order(ByteOrder.LITTLE_ENDIAN)
+                bb.position(timevalSize)
+                val type  = bb.short.toInt() and 0xFFFF
+                val code  = bb.short.toInt() and 0xFFFF
+                val value = bb.int
+                try { callback?.onEvent(devicePath, type, code, value) } catch (_: Exception) {}
+            }
+        } catch (_: IOException) {
+            // stream closed — expected shutdown path
         }
     }
 
