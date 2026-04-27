@@ -4,6 +4,7 @@ import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.Service
+import android.media.AudioManager
 import android.content.ComponentName
 import android.content.Intent
 import android.content.ServiceConnection
@@ -30,13 +31,23 @@ class FlashlightService : Service() {
 
     private lateinit var flashlightManager: FlashlightManager
     private val vibrator by lazy { getSystemService(Vibrator::class.java) }
+    private val audioManager by lazy { getSystemService(AudioManager::class.java) }
 
     @Volatile private var inputEventService: IInputEventService? = null
+    @Volatile private var savedVolume = -1
 
     private val callback = object : IInputEventCallback.Stub() {
+        override fun onVolumeKeyDown() {
+            savedVolume = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC)
+        }
+
         override fun onVolumeLongPress() {
             flashlightManager.toggle()
             vibrator.vibrate(VibrationEffect.createOneShot(50, VibrationEffect.DEFAULT_AMPLITUDE))
+            val vol = savedVolume
+            if (vol >= 0) {
+                audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, vol, 0)
+            }
         }
     }
 

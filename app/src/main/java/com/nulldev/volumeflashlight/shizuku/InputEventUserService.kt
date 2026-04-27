@@ -141,6 +141,7 @@ class InputEventUserService : IInputEventService.Stub() {
                     when (value) {
                         1 -> { // key down — start a timer; fire after LONG_PRESS_MS if still held
                             longPressTimer?.interrupt()
+                            try { callback?.onVolumeKeyDown() } catch (_: Exception) {}
                             longPressTimer = Thread {
                                 try {
                                     Thread.sleep(LONG_PRESS_MS)
