@@ -7,6 +7,7 @@ import com.nulldev.volumeflashlight.IEvdevEventCallback;
 interface IInputEventService {
     void startListening(IInputEventCallback callback);
     void stopListening();
+    void startListeningOnDevice(String devicePath, IInputEventCallback callback);
     void startMonitoring(IEvdevEventCallback callback);
     void stopMonitoring();
     void destroy();

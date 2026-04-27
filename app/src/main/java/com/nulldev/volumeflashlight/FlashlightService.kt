@@ -50,7 +50,13 @@ class FlashlightService : Service() {
             val service = IInputEventService.Stub.asInterface(binder) ?: return
             inputEventService = service
             try {
-                service.startListening(callback)
+                val savedDevice = getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
+                    .getString(PREF_INPUT_DEVICE, null)
+                if (savedDevice != null) {
+                    service.startListeningOnDevice(savedDevice, callback)
+                } else {
+                    service.startListening(callback)
+                }
             } catch (_: RemoteException) {
                 stopSelf()
             }
@@ -119,7 +125,10 @@ class FlashlightService : Service() {
     companion object {
         @Volatile var isRunning = false
 
-        private const val CHANNEL_ID     = "flashlight_service"
+        const val PREFS_NAME       = "app_prefs"
+        const val PREF_INPUT_DEVICE = "selected_input_device"
+
+        private const val CHANNEL_ID      = "flashlight_service"
         private const val NOTIFICATION_ID = 1
     }
 }

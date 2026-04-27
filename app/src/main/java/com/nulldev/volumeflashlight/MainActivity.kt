@@ -1,6 +1,7 @@
 package com.nulldev.volumeflashlight
 
 import android.app.Activity
+import android.app.AlertDialog
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Bundle
@@ -9,6 +10,7 @@ import android.os.Looper
 import android.widget.Button
 import android.widget.TextView
 import rikka.shizuku.Shizuku
+import java.io.File
 
 /**
  * Minimal UI: shows Shizuku/service status and a single Start/Stop toggle.
@@ -20,6 +22,7 @@ class MainActivity : Activity() {
     private lateinit var tvServiceStatus: TextView
     private lateinit var btnToggle: Button
     private lateinit var btnEvdevMonitor: Button
+    private lateinit var btnPickDevice: Button
 
     private val handler = Handler(Looper.getMainLooper())
 
@@ -35,11 +38,13 @@ class MainActivity : Activity() {
         tvServiceStatus = findViewById(R.id.tv_service_status)
         btnToggle       = findViewById(R.id.btn_toggle)
         btnEvdevMonitor = findViewById(R.id.btn_evdev_monitor)
+        btnPickDevice   = findViewById(R.id.btn_pick_device)
 
         btnToggle.setOnClickListener { onToggleClicked() }
         btnEvdevMonitor.setOnClickListener {
             startActivity(Intent(this, EvdevMonitorActivity::class.java))
         }
+        btnPickDevice.setOnClickListener { showPickDeviceDialog() }
         Shizuku.addRequestPermissionResultListener(permissionListener)
     }
 
@@ -76,6 +81,32 @@ class MainActivity : Activity() {
         btnToggle.isEnabled = shizukuRunning
         btnToggle.text = if (serviceRunning) getString(R.string.btn_stop)
                          else getString(R.string.btn_start)
+    }
+
+    private fun showPickDeviceDialog() {
+        val devices = File("/dev/input")
+            .listFiles { f -> f.name.startsWith("event") }
+            ?.map { it.absolutePath }
+            ?.sorted()
+            ?: emptyList()
+
+        val prefs = getSharedPreferences(FlashlightService.PREFS_NAME, MODE_PRIVATE)
+        val saved = prefs.getString(FlashlightService.PREF_INPUT_DEVICE, null)
+
+        val options = arrayOf(getString(R.string.pick_device_auto)) +
+                devices.map { it.substringAfterLast("/") }.toTypedArray()
+        val checked = if (saved == null) 0
+                      else devices.indexOfFirst { it == saved }.let { if (it < 0) 0 else it + 1 }
+
+        AlertDialog.Builder(this)
+            .setTitle(R.string.pick_device_title)
+            .setSingleChoiceItems(options, checked) { dialog, which ->
+                val selected = if (which == 0) null else devices[which - 1]
+                prefs.edit().putString(FlashlightService.PREF_INPUT_DEVICE, selected).apply()
+                dialog.dismiss()
+            }
+            .setMessage(R.string.pick_device_restart_hint)
+            .show()
     }
 
     private fun onToggleClicked() {

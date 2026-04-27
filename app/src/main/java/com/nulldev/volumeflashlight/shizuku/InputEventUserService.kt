@@ -44,6 +44,16 @@ class InputEventUserService : IInputEventService.Stub() {
         }
     }
 
+    override fun startListeningOnDevice(devicePath: String, callback: IInputEventCallback?) {
+        stopListening()
+        Log.i(TAG, "Starting listener on manually selected device: $devicePath")
+        running = true
+        readerThread = Thread({ runReaderLoop(devicePath, callback) }, "evdev-reader").also {
+            it.isDaemon = true
+            it.start()
+        }
+    }
+
     override fun stopListening() {
         running = false
         // Closing the stream causes the blocking read() to throw IOException, unblocking the thread.
