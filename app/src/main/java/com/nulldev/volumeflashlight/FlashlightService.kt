@@ -13,6 +13,7 @@ import android.content.pm.ServiceInfo
 import android.os.Build
 import android.os.IBinder
 import android.os.RemoteException
+import android.os.VibrationAttributes
 import android.os.VibrationEffect
 import android.os.Vibrator
 import com.nulldev.volumeflashlight.shizuku.InputEventUserService
@@ -70,7 +71,10 @@ class FlashlightService : Service() {
         override fun onVolumeLongPress() {
             longPressOccurred = true
             flashlightManager.toggle()
-            vibrator.vibrate(VibrationEffect.createOneShot(50, VibrationEffect.DEFAULT_AMPLITUDE))
+            vibrator.vibrate(
+                VibrationEffect.createOneShot(50, VibrationEffect.DEFAULT_AMPLITUDE),
+                VibrationAttributes.createForUsage(VibrationAttributes.USAGE_ACCESSIBILITY)
+            )
             // Continuously restore the saved volume until the key is released.
             restoring = true
             restoreThread = Thread {
