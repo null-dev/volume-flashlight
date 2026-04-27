@@ -10,5 +10,6 @@ interface IInputEventService {
     void startListeningOnDevice(String devicePath, IInputEventCallback callback);
     void startMonitoring(IEvdevEventCallback callback);
     void stopMonitoring();
+    List<String> getInputDevices();
     void destroy();
 }

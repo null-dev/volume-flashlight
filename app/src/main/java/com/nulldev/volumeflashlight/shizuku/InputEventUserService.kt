@@ -78,6 +78,14 @@ class InputEventUserService : IInputEventService.Stub() {
         }
     }
 
+    override fun getInputDevices(): List<String> {
+        return File("/dev/input")
+            .listFiles { f -> f.name.startsWith("event") }
+            ?.map { it.absolutePath }
+            ?.sorted()
+            ?: emptyList()
+    }
+
     override fun stopMonitoring() {
         monitorRunning = false
         synchronized(monitorStreams) {

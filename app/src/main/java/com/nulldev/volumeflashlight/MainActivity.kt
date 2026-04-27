@@ -2,15 +2,19 @@ package com.nulldev.volumeflashlight
 
 import android.app.Activity
 import android.app.AlertDialog
+import android.content.ComponentName
 import android.content.Intent
+import android.content.ServiceConnection
 import android.content.pm.PackageManager
 import android.os.Bundle
 import android.os.Handler
+import android.os.IBinder
 import android.os.Looper
 import android.widget.Button
 import android.widget.TextView
+import android.widget.Toast
+import com.nulldev.volumeflashlight.shizuku.InputEventUserService
 import rikka.shizuku.Shizuku
-import java.io.File
 
 /**
  * Minimal UI: shows Shizuku/service status and a single Start/Stop toggle.
@@ -25,6 +29,26 @@ class MainActivity : Activity() {
     private lateinit var btnPickDevice: Button
 
     private val handler = Handler(Looper.getMainLooper())
+
+    private val userServiceArgs by lazy {
+        Shizuku.UserServiceArgs(
+            ComponentName(packageName, InputEventUserService::class.java.name)
+        )
+            .daemon(false)
+            .processNameSuffix("input_event")
+            .version(BuildConfig.VERSION_CODE)
+    }
+
+    // One-shot connection used only to fetch the device list for the picker dialog.
+    private val devicePickerConnection = object : ServiceConnection {
+        override fun onServiceConnected(name: ComponentName?, binder: IBinder?) {
+            val svc = IInputEventService.Stub.asInterface(binder) ?: return
+            val devices = try { svc.getInputDevices() } catch (_: Exception) { emptyList() }
+            try { Shizuku.unbindUserService(userServiceArgs, this, false) } catch (_: Exception) {}
+            showDeviceDialog(devices)
+        }
+        override fun onServiceDisconnected(name: ComponentName?) {}
+    }
 
     private val permissionListener = Shizuku.OnRequestPermissionResultListener { _, _ ->
         updateUi()
@@ -84,12 +108,18 @@ class MainActivity : Activity() {
     }
 
     private fun showPickDeviceDialog() {
-        val devices = File("/dev/input")
-            .listFiles { f -> f.name.startsWith("event") }
-            ?.map { it.absolutePath }
-            ?.sorted()
-            ?: emptyList()
+        if (!Shizuku.pingBinder()) {
+            Toast.makeText(this, R.string.shizuku_not_running, Toast.LENGTH_SHORT).show()
+            return
+        }
+        try {
+            Shizuku.bindUserService(userServiceArgs, devicePickerConnection)
+        } catch (_: Exception) {
+            Toast.makeText(this, R.string.shizuku_no_permission, Toast.LENGTH_SHORT).show()
+        }
+    }
 
+    private fun showDeviceDialog(devices: List<String>) {
         val prefs = getSharedPreferences(FlashlightService.PREFS_NAME, MODE_PRIVATE)
         val saved = prefs.getString(FlashlightService.PREF_INPUT_DEVICE, null)
 
