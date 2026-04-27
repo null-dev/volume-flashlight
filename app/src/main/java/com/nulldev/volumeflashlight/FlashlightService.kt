@@ -77,7 +77,7 @@ class FlashlightService : Service() {
                 val vol = savedVolume
                 while (restoring && vol >= 0) {
                     audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, vol, 0)
-                    try { Thread.sleep(50) } catch (_: InterruptedException) { break }
+                    try { Thread.sleep(25) } catch (_: InterruptedException) { break }
                 }
             }.also { it.isDaemon = true; it.start() }
         }
