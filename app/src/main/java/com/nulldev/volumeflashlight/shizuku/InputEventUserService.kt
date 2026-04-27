@@ -32,7 +32,10 @@ class InputEventUserService : IInputEventService.Stub() {
         // Replace any existing listener.
         stopListening()
 
-        val devicePath = findVolumeDownDevice() ?: return
+        val devicePath = findVolumeDownDevice() ?: run {
+            Log.e(TAG, "No volume-down device found; startListening aborted")
+            return
+        }
 
         running = true
         readerThread = Thread({ runReaderLoop(devicePath, callback) }, "evdev-reader").also {
