@@ -127,7 +127,10 @@ class EvdevMonitorActivity : Activity() {
     }
 
     private fun showFilterDialog() {
-        val devices = seenDevices.toSortedSet().toList()
+        val svc = inputEventService
+        val devices = if (svc != null) {
+            try { svc.getInputDevices().map { it.substringAfterLast("/") }.sorted() } catch (_: Exception) { emptyList() }
+        } else { emptyList() }
         if (devices.isEmpty()) {
             Toast.makeText(this, R.string.filter_no_devices, Toast.LENGTH_SHORT).show()
             return
