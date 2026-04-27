@@ -3,7 +3,6 @@ package com.nulldev.volumeflashlight
 import android.app.Activity
 import android.content.ComponentName
 import android.content.ServiceConnection
-import android.graphics.Color
 import android.os.Bundle
 import android.os.Handler
 import android.os.IBinder
@@ -93,9 +92,6 @@ class EvdevMonitorActivity : Activity() {
         setActionBar(toolbar)
         actionBar?.title = getString(R.string.evdev_monitor_title)
         actionBar?.setDisplayHomeAsUpEnabled(true)
-        toolbar.navigationIcon?.mutate()?.setTint(Color.WHITE)
-
-        window.statusBarColor = Color.BLACK
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
