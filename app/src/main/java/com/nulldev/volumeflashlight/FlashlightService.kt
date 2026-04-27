@@ -35,27 +35,43 @@ class FlashlightService : Service() {
 
     @Volatile private var inputEventService: IInputEventService? = null
     @Volatile private var savedVolume = -1
+    @Volatile private var volumeExpiresAt = 0L
+    @Volatile private var longPressOccurred = false
     @Volatile private var restoring = false
     private var restoreThread: Thread? = null
 
     private val callback = object : IInputEventCallback.Stub() {
         override fun onVolumeKeyDown() {
-            savedVolume = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC)
+            longPressOccurred = false
+            // Reuse the saved volume if we're within 1s of a preceding long-press release,
+            // so that rapid repeated presses don't accumulate drift.
+            if (savedVolume < 0 || System.currentTimeMillis() > volumeExpiresAt) {
+                savedVolume = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC)
+            }
         }
 
         override fun onVolumeKeyUp() {
             restoring = false
             restoreThread?.interrupt()
             restoreThread = null
-            val vol = savedVolume
-            if (vol >= 0) audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, vol, 0)
+            if (longPressOccurred) {
+                // Final restore to close any last-moment timing gap.
+                val vol = savedVolume
+                if (vol >= 0) audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, vol, 0)
+                // Keep the saved volume live for 1s so the next press can reuse it.
+                volumeExpiresAt = System.currentTimeMillis() + 1_000L
+            } else {
+                // Short press: volume change was intentional — discard the snapshot.
+                savedVolume = -1
+                volumeExpiresAt = 0L
+            }
         }
 
         override fun onVolumeLongPress() {
+            longPressOccurred = true
             flashlightManager.toggle()
             vibrator.vibrate(VibrationEffect.createOneShot(50, VibrationEffect.DEFAULT_AMPLITUDE))
-            // Continuously restore the saved volume until the key is released, so that
-            // the system's auto-repeat volume adjustment is kept at bay.
+            // Continuously restore the saved volume until the key is released.
             restoring = true
             restoreThread = Thread {
                 val vol = savedVolume
