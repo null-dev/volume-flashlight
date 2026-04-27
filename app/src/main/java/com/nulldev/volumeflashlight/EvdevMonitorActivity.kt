@@ -3,12 +3,16 @@ package com.nulldev.volumeflashlight
 import android.app.Activity
 import android.content.ComponentName
 import android.content.ServiceConnection
+import android.graphics.Color
 import android.os.Bundle
 import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
+import android.view.Menu
+import android.view.MenuItem
 import android.widget.ScrollView
 import android.widget.TextView
+import android.widget.Toolbar
 import com.nulldev.volumeflashlight.shizuku.InputEventUserService
 import rikka.shizuku.Shizuku
 import java.util.concurrent.ConcurrentLinkedDeque
@@ -26,6 +30,7 @@ class EvdevMonitorActivity : Activity() {
 
     private var inputEventService: IInputEventService? = null
     private var serviceBound = false
+    private var paused = false
 
     private val userServiceArgs by lazy {
         Shizuku.UserServiceArgs(
@@ -83,11 +88,36 @@ class EvdevMonitorActivity : Activity() {
         setContentView(R.layout.activity_evdev_monitor)
         tvLog = findViewById(R.id.tv_log)
         scrollView = findViewById(R.id.scroll_view)
+
+        val toolbar = findViewById<Toolbar>(R.id.toolbar)
+        setActionBar(toolbar)
+        actionBar?.title = getString(R.string.evdev_monitor_title)
+        actionBar?.setDisplayHomeAsUpEnabled(true)
+
+        window.statusBarColor = Color.BLACK
+    }
+
+    override fun onCreateOptionsMenu(menu: Menu): Boolean {
+        menuInflater.inflate(R.menu.menu_evdev_monitor, menu)
+        return true
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean = when (item.itemId) {
+        android.R.id.home -> { finish(); true }
+        R.id.action_pause -> {
+            paused = !paused
+            item.setIcon(if (paused) R.drawable.ic_resume else R.drawable.ic_pause)
+            item.title = getString(if (paused) R.string.menu_resume else R.string.menu_pause)
+            if (paused) handler.removeCallbacks(uiUpdateRunnable)
+            else handler.post(uiUpdateRunnable)
+            true
+        }
+        else -> super.onOptionsItemSelected(item)
     }
 
     override fun onResume() {
         super.onResume()
-        handler.post(uiUpdateRunnable)
+        if (!paused) handler.post(uiUpdateRunnable)
         if (Shizuku.pingBinder()) {
             try {
                 Shizuku.bindUserService(userServiceArgs, serviceConnection)
