@@ -35,17 +35,16 @@ class EvdevMonitorActivity : Activity() {
             .version(BuildConfig.VERSION_CODE)
     }
 
+    private val logLines = ArrayDeque<String>(MAX_LINES + 1)
+
     private val evdevCallback = object : IEvdevEventCallback.Stub() {
         override fun onEvent(devicePath: String, type: Int, code: Int, value: Int) {
             val devName = devicePath.substringAfterLast("/")
-            val line = "$devName  type=%-5d  code=%-5d  value=$value\n".format(type, code)
+            val line = "$devName  type=%-5d  code=%-5d  value=$value".format(type, code)
             handler.post {
-                tvLog.append(line)
-                // Keep the buffer bounded by trimming from the front.
-                val text = tvLog.text
-                if (text.length > MAX_CHARS) {
-                    tvLog.text = text.substring(text.length - MAX_CHARS)
-                }
+                logLines.addLast(line)
+                if (logLines.size > MAX_LINES) logLines.removeFirst()
+                tvLog.text = logLines.joinToString("\n")
                 scrollView.post { scrollView.fullScroll(ScrollView.FOCUS_DOWN) }
             }
         }
@@ -97,7 +96,6 @@ class EvdevMonitorActivity : Activity() {
     }
 
     companion object {
-        // ~20 KB of log text kept in memory.
-        private const val MAX_CHARS = 20_000
+        private const val MAX_LINES = 200
     }
 }
