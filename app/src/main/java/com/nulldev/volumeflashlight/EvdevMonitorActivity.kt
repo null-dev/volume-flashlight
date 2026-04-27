@@ -59,7 +59,7 @@ class EvdevMonitorActivity : Activity() {
             val devName = devicePath.substringAfterLast("/")
             seenDevices.add(devName)
             if (devName !in excludedDevices) {
-                pendingLines.addLast("$devName  type=%-5d  code=%-5d  value=$value".format(type, code))
+                pendingLines.addLast("%-12s  %s".format(devName, EvdevDecoder.formatEvent(type, code, value)))
             }
         }
     }
