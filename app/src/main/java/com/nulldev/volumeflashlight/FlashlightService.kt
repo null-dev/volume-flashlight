@@ -35,19 +35,33 @@ class FlashlightService : Service() {
 
     @Volatile private var inputEventService: IInputEventService? = null
     @Volatile private var savedVolume = -1
+    @Volatile private var restoring = false
+    private var restoreThread: Thread? = null
 
     private val callback = object : IInputEventCallback.Stub() {
         override fun onVolumeKeyDown() {
             savedVolume = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC)
         }
 
+        override fun onVolumeKeyUp() {
+            restoring = false
+            restoreThread?.interrupt()
+            restoreThread = null
+        }
+
         override fun onVolumeLongPress() {
             flashlightManager.toggle()
             vibrator.vibrate(VibrationEffect.createOneShot(50, VibrationEffect.DEFAULT_AMPLITUDE))
-            val vol = savedVolume
-            if (vol >= 0) {
-                audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, vol, 0)
-            }
+            // Continuously restore the saved volume until the key is released, so that
+            // the system's auto-repeat volume adjustment is kept at bay.
+            restoring = true
+            restoreThread = Thread {
+                val vol = savedVolume
+                while (restoring && vol >= 0) {
+                    audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, vol, 0)
+                    try { Thread.sleep(50) } catch (_: InterruptedException) { break }
+                }
+            }.also { it.isDaemon = true; it.start() }
         }
     }
 

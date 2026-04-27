@@ -152,6 +152,7 @@ class InputEventUserService : IInputEventService.Stub() {
                         0 -> { // key up — cancel pending timer
                             longPressTimer?.interrupt()
                             longPressTimer = null
+                            try { callback?.onVolumeKeyUp() } catch (_: Exception) {}
                         }
                         // value == 2 is key-repeat; ignore
                     }
