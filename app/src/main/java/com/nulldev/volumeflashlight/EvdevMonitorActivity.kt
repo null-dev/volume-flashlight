@@ -1,6 +1,7 @@
 package com.nulldev.volumeflashlight
 
 import android.app.Activity
+import android.app.AlertDialog
 import android.content.ComponentName
 import android.content.ServiceConnection
 import android.os.Bundle
@@ -11,10 +12,14 @@ import android.view.Menu
 import android.view.MenuItem
 import android.widget.ScrollView
 import android.widget.TextView
+import android.widget.Toast
 import android.widget.Toolbar
 import com.nulldev.volumeflashlight.shizuku.InputEventUserService
 import rikka.shizuku.Shizuku
+import java.util.Collections
+import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentLinkedDeque
+import java.util.concurrent.CopyOnWriteArraySet
 
 /**
  * Shows a live tail of raw evdev events from all /dev/input/event* devices.
@@ -40,6 +45,11 @@ class EvdevMonitorActivity : Activity() {
             .version(BuildConfig.VERSION_CODE)
     }
 
+    // Thread-safe: written from binder threads, read on main thread for dialog.
+    private val seenDevices: MutableSet<String> = Collections.newSetFromMap(ConcurrentHashMap())
+    // Thread-safe: read from binder threads (fast path), written from main thread (rare).
+    private val excludedDevices = CopyOnWriteArraySet<String>()
+
     // Binder threads write here; main thread drains it on a fixed-rate tick.
     private val pendingLines = ConcurrentLinkedDeque<String>()
     private val logLines = ArrayDeque<String>(MAX_LINES + 1)
@@ -47,7 +57,10 @@ class EvdevMonitorActivity : Activity() {
     private val evdevCallback = object : IEvdevEventCallback.Stub() {
         override fun onEvent(devicePath: String, type: Int, code: Int, value: Int) {
             val devName = devicePath.substringAfterLast("/")
-            pendingLines.addLast("$devName  type=%-5d  code=%-5d  value=$value".format(type, code))
+            seenDevices.add(devName)
+            if (devName !in excludedDevices) {
+                pendingLines.addLast("$devName  type=%-5d  code=%-5d  value=$value".format(type, code))
+            }
         }
     }
 
@@ -101,6 +114,7 @@ class EvdevMonitorActivity : Activity() {
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean = when (item.itemId) {
         android.R.id.home -> { finish(); true }
+        R.id.action_filter -> { showFilterDialog(); true }
         R.id.action_pause -> {
             paused = !paused
             item.setIcon(if (paused) R.drawable.ic_resume else R.drawable.ic_pause)
@@ -110,6 +124,23 @@ class EvdevMonitorActivity : Activity() {
             true
         }
         else -> super.onOptionsItemSelected(item)
+    }
+
+    private fun showFilterDialog() {
+        val devices = seenDevices.toSortedSet().toList()
+        if (devices.isEmpty()) {
+            Toast.makeText(this, R.string.filter_no_devices, Toast.LENGTH_SHORT).show()
+            return
+        }
+        val checked = BooleanArray(devices.size) { devices[it] !in excludedDevices }
+        AlertDialog.Builder(this)
+            .setTitle(R.string.filter_title)
+            .setMultiChoiceItems(devices.toTypedArray(), checked) { _, which, isChecked ->
+                if (isChecked) excludedDevices.remove(devices[which])
+                else excludedDevices.add(devices[which])
+            }
+            .setPositiveButton(android.R.string.ok) { dialog, _ -> dialog.dismiss() }
+            .show()
     }
 
     override fun onResume() {

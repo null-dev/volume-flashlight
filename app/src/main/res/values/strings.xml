@@ -11,6 +11,9 @@
     <string name="btn_stop">Stop</string>
     <string name="btn_evdev_monitor">Evdev Monitor</string>
     <string name="evdev_monitor_title">Evdev Monitor</string>
+    <string name="menu_filter">Filter</string>
     <string name="menu_pause">Pause</string>
     <string name="menu_resume">Resume</string>
+    <string name="filter_title">Filter devices</string>
+    <string name="filter_no_devices">No devices seen yet</string>
 </resources>
