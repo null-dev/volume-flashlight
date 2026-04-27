@@ -93,6 +93,7 @@ class EvdevMonitorActivity : Activity() {
         setActionBar(toolbar)
         actionBar?.title = getString(R.string.evdev_monitor_title)
         actionBar?.setDisplayHomeAsUpEnabled(true)
+        toolbar.navigationIcon?.mutate()?.setTint(Color.WHITE)
 
         window.statusBarColor = Color.BLACK
     }
