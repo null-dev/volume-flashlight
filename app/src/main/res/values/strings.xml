@@ -13,8 +13,7 @@
     <string name="btn_pick_device">Pick input device</string>
     <string name="pick_device_title">Input device</string>
     <string name="pick_device_auto">Auto-detect</string>
-    <string name="pick_device_restart_hint">Restart the service for changes to take effect.</string>
-    <string name="evdev_monitor_title">Evdev Monitor</string>
+<string name="evdev_monitor_title">Evdev Monitor</string>
     <string name="menu_filter">Filter</string>
     <string name="menu_pause">Pause</string>
     <string name="menu_resume">Resume</string>

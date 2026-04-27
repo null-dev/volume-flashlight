@@ -134,7 +134,6 @@ class MainActivity : Activity() {
                 val selected = if (which == 0) null else devices[which - 1]
                 prefs.edit().putString(FlashlightService.PREF_INPUT_DEVICE, selected).apply()
                 dialog.dismiss()
-                Toast.makeText(this, R.string.pick_device_restart_hint, Toast.LENGTH_LONG).show()
             }
             .show()
     }
