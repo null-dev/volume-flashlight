@@ -1,2 +1,14 @@
 /.idea
 /.vscode/mise-tools
+
+# Android build outputs and Gradle cache
+**/build/
+**/.gradle/
+/app/.cxx
+
+# Local machine config — contains SDK path, never commit
+local.properties
+
+# Packaged artifacts
+*.apk
+*.aab

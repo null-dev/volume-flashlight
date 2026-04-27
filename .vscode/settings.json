@@ -1,0 +1,9 @@
+{
+    "go.goroot": "/home/nulldev/.local/share/mise/installs/go/1.26.2",
+    "debug.javascript.defaultRuntimeExecutable": {
+        "pwa-node": "/home/nulldev/.local/share/mise/shims/node"
+    },
+    "go.alternateTools": {
+        "go": "/home/nulldev/.local/share/mise/shims/go"
+    }
+}

@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">volume-flashlight</string>
+    <string name="notification_text">Listening for volume-down long press</string>
+    <string name="shizuku_not_running">Shizuku is not running</string>
+    <string name="shizuku_no_permission">Shizuku permission required — tap Start to grant</string>
+    <string name="shizuku_ready">Shizuku ready</string>
+    <string name="service_active">Flashlight toggle: Active</string>
+    <string name="service_inactive">Flashlight toggle: Inactive</string>
+    <string name="btn_start">Start</string>
+    <string name="btn_stop">Stop</string>
+    <string name="btn_evdev_monitor">Evdev Monitor</string>
+    <string name="btn_pick_device">Pick input device</string>
+    <string name="cb_auto_start">Start on boot</string>
+    <string name="pick_device_title">Input device</string>
+    <string name="pick_device_auto">Auto-detect</string>
+<string name="evdev_monitor_title">Evdev Monitor</string>
+    <string name="menu_filter">Filter</string>
+    <string name="menu_pause">Pause</string>
+    <string name="menu_resume">Resume</string>
+    <string name="filter_title">Filter devices</string>
+    <string name="filter_no_devices">No devices seen yet</string>
+</resources>
